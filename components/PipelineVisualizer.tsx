@@ -1,5 +1,5 @@
 import React from 'react';
-import { SDLCPhase } from '../types';
+import { SDLCPhase } from '../types.ts';
 import { Shield, Box, Server, Activity, ArrowRight } from 'lucide-react';
 
 interface Props {

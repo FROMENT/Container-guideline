@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Cpu } from 'lucide-react';
-import { generateChatResponse } from '../services/geminiService';
-import { ChatMessage } from '../types';
+import { generateChatResponse } from '../services/geminiService.ts';
+import { ChatMessage } from '../types.ts';
 
 export const ChatAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);

@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { SDLCPhase, ModuleItem, GeneratedContentState } from './types';
-import { CURRICULUM, ICONS } from './constants';
-import { generateModuleContent } from './services/geminiService';
-import PipelineVisualizer from './components/PipelineVisualizer';
-import { MarkdownRenderer } from './components/MarkdownRenderer';
-import { ChatAssistant } from './components/ChatAssistant';
-import { ShieldAlert, Info, Menu, ChevronRight, Lock } from 'lucide-react';
+import { SDLCPhase, ModuleItem, GeneratedContentState } from './types.ts';
+import { CURRICULUM } from './constants.ts';
+import { generateModuleContent } from './services/geminiService.ts';
+import PipelineVisualizer from './components/PipelineVisualizer.tsx';
+import { MarkdownRenderer } from './components/MarkdownRenderer.tsx';
+import { ChatAssistant } from './components/ChatAssistant.tsx';
+import { ShieldAlert, Info, Menu, ChevronRight, Lock, Github, ExternalLink, Shield, Box, Server, Activity } from 'lucide-react';
+
+const ICONS = {
+  [SDLCPhase.DESIGN]: Shield,
+  [SDLCPhase.BUILD]: Box,
+  [SDLCPhase.DEPLOY]: Server,
+  [SDLCPhase.RUNTIME]: Activity
+};
 
 const App: React.FC = () => {
   const [activePhase, setActivePhase] = useState<SDLCPhase>(SDLCPhase.DESIGN);
@@ -20,17 +27,21 @@ const App: React.FC = () => {
   // Load content when module changes
   useEffect(() => {
     const loadContent = async () => {
-      // Return if already cached
-      if (generatedContent[activeModuleId]) return;
+      // Return if already cached (check for undefined to handle empty strings if they occurred)
+      if (generatedContent[activeModuleId] !== undefined) return;
 
       setIsLoading(true);
       const module = CURRICULUM.find(m => m.id === activeModuleId);
       if (module) {
-        const text = await generateModuleContent(module.promptTopic);
-        setGeneratedContent(prev => ({
-          ...prev,
-          [activeModuleId]: text
-        }));
+        try {
+          const text = await generateModuleContent(module.promptTopic);
+          setGeneratedContent(prev => ({
+            ...prev,
+            [activeModuleId]: text
+          }));
+        } catch (error) {
+          console.error("Content load failed", error);
+        }
       }
       setIsLoading(false);
     };
@@ -69,10 +80,32 @@ const App: React.FC = () => {
               </div>
             </div>
             
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-6">
               <span className="text-sm text-gray-400 bg-gray-900 px-3 py-1 rounded-full border border-gray-700">
                 AI-Powered Guide
               </span>
+              
+              <div className="flex items-center gap-6 border-l border-gray-700 pl-6">
+                <a 
+                  href="#" 
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                  title="Live Deployment Placeholder"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <ExternalLink className="w-5 h-5" />
+                  <span className="text-sm font-medium">Live Demo</span>
+                </a>
+
+                <a 
+                  href="https://github.com/openshift/secure-sdlc-guide" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                >
+                  <Github className="w-5 h-5" />
+                  <span className="text-sm font-medium">v1.1.0</span>
+                </a>
+              </div>
             </div>
 
             <button 
@@ -124,56 +157,61 @@ const App: React.FC = () => {
             </div>
 
             <div className="mt-8 p-4 bg-gray-900 rounded-xl border border-gray-800">
-              <div className="flex items-center gap-2 text-yellow-500 mb-2">
-                <ShieldAlert className="w-5 h-5" />
-                <span className="font-bold text-sm">Security Tip</span>
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="w-5 h-5 text-yellow-500 mt-0.5" />
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Always verify AI-generated security configurations in a non-production environment before deploying.
+                </p>
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                Always apply the principle of least privilege. Containers should essentially never run as root in production.
-              </p>
             </div>
           </div>
         </aside>
 
         {/* Main Content Area */}
         <main className="flex-1 min-w-0">
-           {isLoading ? (
-             <div className="h-96 flex flex-col items-center justify-center space-y-4">
-               <div className="w-12 h-12 border-4 border-rh-red border-t-transparent rounded-full animate-spin"></div>
-               <p className="text-gray-400 animate-pulse">Consulting the Security Expert...</p>
-             </div>
-           ) : (
-             <div className="bg-card-bg rounded-2xl border border-gray-800 p-6 md:p-8 shadow-2xl animate-fade-in">
-               <div className="flex items-center gap-4 mb-8 border-b border-gray-700 pb-6">
-                 <div className="p-3 bg-gray-900 rounded-lg">
-                   <ActiveIcon className="w-8 h-8 text-rh-red" />
-                 </div>
-                 <div>
-                   <h2 className="text-3xl font-bold text-white">
-                     {CURRICULUM.find(m => m.id === activeModuleId)?.title}
-                   </h2>
-                   <p className="text-gray-400 mt-1">
-                     {CURRICULUM.find(m => m.id === activeModuleId)?.shortDesc}
-                   </p>
-                 </div>
-               </div>
+          <div className="bg-card-bg rounded-2xl border border-gray-800 overflow-hidden shadow-2xl min-h-[600px] flex flex-col">
+            
+            {/* Module Header */}
+            <div className="p-8 border-b border-gray-800 bg-gradient-to-r from-gray-900 to-card-bg">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-gray-800 rounded-lg">
+                  <ActiveIcon className="w-6 h-6 text-rh-red" />
+                </div>
+                <span className="text-sm text-rh-red font-semibold tracking-wider uppercase">
+                  {activePhase}
+                </span>
+              </div>
+              
+              {CURRICULUM.find(m => m.id === activeModuleId) && (
+                <>
+                  <h2 className="text-3xl font-bold text-white mb-2">
+                    {CURRICULUM.find(m => m.id === activeModuleId)?.title}
+                  </h2>
+                  <p className="text-gray-400 max-w-2xl">
+                    {CURRICULUM.find(m => m.id === activeModuleId)?.shortDesc}
+                  </p>
+                </>
+              )}
+            </div>
 
-               <div className="prose prose-invert max-w-none">
-                 <MarkdownRenderer content={generatedContent[activeModuleId] || ''} />
-               </div>
-             </div>
-           )}
+            {/* Content Body */}
+            <div className="p-8 flex-1">
+              {isLoading ? (
+                 <div className="space-y-6 animate-pulse">
+                   <div className="h-4 bg-gray-800 rounded w-3/4"></div>
+                   <div className="h-4 bg-gray-800 rounded w-1/2"></div>
+                   <div className="h-32 bg-gray-800 rounded w-full"></div>
+                   <div className="h-4 bg-gray-800 rounded w-2/3"></div>
+                 </div>
+              ) : (
+                <MarkdownRenderer content={generatedContent[activeModuleId] || ''} />
+              )}
+            </div>
+          </div>
         </main>
       </div>
 
       <ChatAssistant />
-      
-      {/* Footer */}
-      <footer className="bg-rh-black border-t border-gray-800 py-8 mt-12">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-          <p>© {new Date().getFullYear()} OpenShift Secure Dev Guide. Powered by Google Gemini.</p>
-        </div>
-      </footer>
     </div>
   );
 };

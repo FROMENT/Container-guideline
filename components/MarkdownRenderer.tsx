@@ -1,11 +1,12 @@
 import React from 'react';
+import { GLOSSARY } from '../constants.ts';
+import { GlossaryTooltip } from './GlossaryTooltip.tsx';
 
 interface Props {
   content: string;
 }
 
 // A lightweight markdown renderer to avoid heavy dependencies for this demo.
-// It handles headers, code blocks, bold text, and lists basic parsing.
 export const MarkdownRenderer: React.FC<Props> = ({ content }) => {
   if (!content) return null;
 
@@ -49,11 +50,11 @@ export const MarkdownRenderer: React.FC<Props> = ({ content }) => {
 
     // Headers
     if (line.startsWith('### ')) {
-      elements.push(<h3 key={index} className="text-xl font-bold text-white mt-6 mb-3">{line.replace('### ', '')}</h3>);
+      elements.push(<h3 key={index} className="text-xl font-bold text-white mt-6 mb-3">{parseInline(line.replace('### ', ''))}</h3>);
     } else if (line.startsWith('## ')) {
-      elements.push(<h2 key={index} className="text-2xl font-bold text-rh-red mt-8 mb-4 border-b border-gray-700 pb-2">{line.replace('## ', '')}</h2>);
+      elements.push(<h2 key={index} className="text-2xl font-bold text-rh-red mt-8 mb-4 border-b border-gray-700 pb-2">{parseInline(line.replace('## ', ''))}</h2>);
     } else if (line.startsWith('# ')) {
-      elements.push(<h1 key={index} className="text-3xl font-bold text-white mt-4 mb-6">{line.replace('# ', '')}</h1>);
+      elements.push(<h1 key={index} className="text-3xl font-bold text-white mt-4 mb-6">{parseInline(line.replace('# ', ''))}</h1>);
     } 
     // Lists
     else if (line.trim().startsWith('- ')) {
@@ -62,7 +63,7 @@ export const MarkdownRenderer: React.FC<Props> = ({ content }) => {
     }
     // Paragraphs / Empty lines
     else if (line.trim() === '') {
-      // ignore empty lines generally, but maybe add spacing
+      // ignore empty lines generally
     } else {
       elements.push(<p key={index} className="mb-3 text-gray-300 leading-relaxed">{parseInline(line)}</p>);
     }
@@ -76,15 +77,45 @@ export const MarkdownRenderer: React.FC<Props> = ({ content }) => {
   return <div className="markdown-body">{elements}</div>;
 };
 
-// Helper for bold/italic/code inline
-const parseInline = (text: string): React.ReactNode => {
+// Helper for bold/italic/code/glossary inline
+const parseInline = (text: string): React.ReactNode[] => {
+  // First split by code blocks and bold to identify "formatted" zones vs "plain" zones
   const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
+  
   return parts.map((part, i) => {
+    // Check for inline code
     if (part.startsWith('`') && part.endsWith('`')) {
       return <code key={i} className="bg-gray-800 text-yellow-300 px-1 py-0.5 rounded text-sm font-mono">{part.slice(1, -1)}</code>;
     }
+    // Check for bold
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={i} className="text-white font-semibold">{part.slice(2, -2)}</strong>;
+    }
+    
+    // If it's plain text, scan for glossary terms
+    return processGlossaryTerms(part, i);
+  }).flat(); // Flatten the array since processGlossaryTerms returns an array
+};
+
+// Helper to inject Tooltips for known glossary terms
+const processGlossaryTerms = (text: string, keyPrefix: number): React.ReactNode[] => {
+  // Create a regex that matches any of the keys in GLOSSARY, case-insensitive, word boundary
+  const terms = Object.keys(GLOSSARY);
+  if (terms.length === 0) return [text];
+
+  const regex = new RegExp(`\\b(${terms.join('|')})\\b`, 'gi');
+  const parts = text.split(regex);
+
+  return parts.map((part, index) => {
+    const upperPart = part.toUpperCase();
+    if (GLOSSARY[upperPart]) {
+      return (
+        <GlossaryTooltip 
+          key={`${keyPrefix}-${index}`} 
+          term={part} 
+          definition={GLOSSARY[upperPart]} 
+        />
+      );
     }
     return part;
   });
