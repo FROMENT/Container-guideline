@@ -1,20 +1,44 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# OpenShift Secure SDLC Hub
 
-# Run and deploy your AI Studio app
+**Interface de génération de documentation technique pour l'ingénierie de sécurité OpenShift.**
 
-This contains everything you need to run your app locally.
+Ce projet est une Single Page Application (SPA) React qui utilise l'IA générative pour produire, à la demande, des guides de sécurité contextuels. Contrairement à une documentation statique, le contenu est généré dynamiquement via Google Gemini 3 en suivant un curriculum strict défini dans le code.
 
-View your app in AI Studio: https://ai.studio/apps/drive/12qA1YfXaHhZamTONf6QQA3yXOeyC-WtE
+## 🎯 Objectif Technique
 
-## Run Locally
+Fournir aux ingénieurs DevSecOps une interface centralisée qui transforme des requêtes techniques (prompts) en documentation structurée (Markdown), spécifiquement pour l'écosystème Red Hat (OpenShift, Quay, ACS).
 
-**Prerequisites:**  Node.js
+## ⚡ Fonctionnalités Implémentées
 
+*   **Génération Dynamique** : Production de contenu technique sur 10 modules (de l'image de base UBI à la sécurité Runtime).
+*   **Assistant Conversationnel** : Chatbot contextuel (`ChatAssistant.tsx`) capable de répondre aux questions spécifiques en gardant le contexte "SecOps".
+*   **Navigation SDLC** : Visualisation interactive du pipeline (Design / Build / Deploy / Runtime).
+*   **Métriques de Vue** : Système de comptage hybride (Supabase avec repli automatique sur LocalStorage si hors ligne).
+*   **Hub d'Écosystème** : Point d'entrée vers les autres outils de la suite WetAndSea (définis dans `NetworkDiscovery`).
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 🔍 Architecture & Limites
+
+### Stack
+*   **Frontend** : React 18, Tailwind CSS, Lucide Icons.
+*   **AI** : Google GenAI SDK (Modèles `gemini-3-flash` et `gemini-3-pro`).
+*   **Data** : Supabase (PostgreSQL) + LocalStorage.
+
+### Notes d'Audit
+*   **Contenu IA** : Le contenu affiché est non-déterministe. Bien que guidé par des "System Instructions" strictes (fichiers `constants.ts`), il peut varier d'une requête à l'autre.
+*   **Feedback** : Une couche de service (`supabaseService.ts`) existe pour collecter les retours utilisateurs, mais **l'interface utilisateur ne l'expose pas encore**.
+*   **Dépendances** : L'application nécessite des clés API valides pour fonctionner (Gemini & Supabase).
+
+## 🚀 Installation / Configuration
+
+L'application attend les variables d'environnement suivantes (injectées au build ou runtime) :
+
+```bash
+API_KEY=votre_cle_google_gemini       # Obligatoire pour le contenu
+SUPABASE_URL=votre_url_supabase       # Optionnel (repli local)
+SUPABASE_ANON_KEY=votre_cle_supabase  # Optionnel (repli local)
+```
+
+> **Avertissement** : Cet outil génère des configurations de sécurité via IA. Tout code (YAML, CLI) produit doit être audité manuellement avant déploiement en production.
+
+---
+*Projet audité - WetAndSeaAI Engineering.*

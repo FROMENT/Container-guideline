@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { SDLCPhase, ModuleItem, GeneratedContentState } from './types.ts';
-import { CURRICULUM } from './constants.ts';
+import React, { useState, useEffect, useCallback } from 'react';
+import { SDLCPhase, GeneratedContentState } from './types.ts';
+import { CURRICULUM, EXTERNAL_LINKS } from './constants.ts';
 import { generateModuleContent } from './services/geminiService.ts';
 import PipelineVisualizer from './components/PipelineVisualizer.tsx';
 import { MarkdownRenderer } from './components/MarkdownRenderer.tsx';
 import { ChatAssistant } from './components/ChatAssistant.tsx';
-import { ShieldAlert, Info, Menu, ChevronRight, Lock, Github, ExternalLink, Shield, Box, Server, Activity } from 'lucide-react';
+import { NetworkDiscovery } from './components/NetworkDiscovery.tsx';
+import { ViewCounter } from './components/ViewCounter.tsx';
+import { ShieldAlert, Info, Menu, ChevronRight, Lock, Github, ExternalLink, Shield, Box, Server, Activity, ShoppingBag, Coffee, X } from 'lucide-react';
 
 const ICONS = {
   [SDLCPhase.DESIGN]: Shield,
@@ -21,102 +23,128 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Filter modules by active phase
   const phaseModules = CURRICULUM.filter(m => m.phase === activePhase);
 
-  // Load content when module changes
-  useEffect(() => {
-    const loadContent = async () => {
-      // Return if already cached (check for undefined to handle empty strings if they occurred)
-      if (generatedContent[activeModuleId] !== undefined) return;
+  const loadContent = useCallback(async (moduleId: string) => {
+    if (generatedContent[moduleId]) return;
 
-      setIsLoading(true);
-      const module = CURRICULUM.find(m => m.id === activeModuleId);
-      if (module) {
-        try {
-          const text = await generateModuleContent(module.promptTopic);
-          setGeneratedContent(prev => ({
-            ...prev,
-            [activeModuleId]: text
-          }));
-        } catch (error) {
-          console.error("Content load failed", error);
-        }
+    setIsLoading(true);
+    const module = CURRICULUM.find(m => m.id === moduleId);
+    if (module) {
+      try {
+        const text = await generateModuleContent(module.promptTopic);
+        setGeneratedContent(prev => ({
+          ...prev,
+          [moduleId]: text
+        }));
+      } catch (error) {
+        console.error("Failed to load module content:", error);
       }
-      setIsLoading(false);
-    };
+    }
+    setIsLoading(false);
+  }, [generatedContent]);
 
-    loadContent();
-  }, [activeModuleId, generatedContent]);
+  useEffect(() => {
+    loadContent(activeModuleId);
+  }, [activeModuleId, loadContent]);
 
-  // Handle phase change
   const handlePhaseChange = (phase: SDLCPhase) => {
     setActivePhase(phase);
-    // Find first module of this phase
     const firstModule = CURRICULUM.find(m => m.phase === phase);
     if (firstModule) {
       setActiveModuleId(firstModule.id);
     }
   };
 
+  const currentModule = CURRICULUM.find(m => m.id === activeModuleId);
   const ActiveIcon = ICONS[activePhase] || Info;
 
   return (
-    <div className="min-h-screen bg-dark-bg flex flex-col text-gray-200">
+    <div className="min-h-screen bg-dark-bg flex flex-col text-gray-200 font-sans">
       
       {/* Navbar */}
-      <header className="bg-rh-black border-b border-gray-800 sticky top-0 z-30">
+      <header className="bg-rh-black border-b border-gray-800 sticky top-0 z-40 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+            
+            {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="bg-rh-red p-1.5 rounded">
+              <div className="bg-gradient-to-br from-rh-red to-red-900 p-1.5 rounded-lg shadow-inner">
                 <Lock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">
-                  OpenShift <span className="text-red-500">Secure</span>
+                <h1 className="text-lg font-bold text-white tracking-tight leading-none">
+                  WetAndSea<span className="text-rh-red">.AI</span>
                 </h1>
-                <p className="text-xs text-gray-400 -mt-1">SDLC & Container Security</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest">Security Engineering</p>
               </div>
             </div>
             
+            {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-6">
-              <span className="text-sm text-gray-400 bg-gray-900 px-3 py-1 rounded-full border border-gray-700">
-                AI-Powered Guide
-              </span>
               
-              <div className="flex items-center gap-6 border-l border-gray-700 pl-6">
-                <a 
-                  href="#" 
-                  className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-                  title="Live Deployment Placeholder"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  <ExternalLink className="w-5 h-5" />
-                  <span className="text-sm font-medium">Live Demo</span>
-                </a>
+              {/* External Commercial Links */}
+              <div className="flex items-center gap-3 border-r border-gray-700 pr-6 mr-2">
+                 <a href={EXTERNAL_LINKS.ETSY} target="_blank" rel="noopener" className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-900 hover:bg-orange-900/30 border border-gray-700 hover:border-orange-500 transition-all">
+                    <ShoppingBag className="w-4 h-4 text-orange-400 group-hover:text-orange-300" />
+                    <span className="text-xs font-medium text-gray-300 group-hover:text-white">Shop</span>
+                 </a>
+                 <a href={EXTERNAL_LINKS.KOFI} target="_blank" rel="noopener" className="group flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-900 hover:bg-pink-900/30 border border-gray-700 hover:border-pink-500 transition-all">
+                    <Coffee className="w-4 h-4 text-pink-400 group-hover:text-pink-300" />
+                    <span className="text-xs font-medium text-gray-300 group-hover:text-white">Support</span>
+                 </a>
+              </div>
 
+              {/* Functional Links */}
+              <div className="flex items-center gap-5">
+                <a href={EXTERNAL_LINKS.DOCS} className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Documentation</a>
                 <a 
-                  href="https://github.com/openshift/secure-sdlc-guide" 
+                  href={EXTERNAL_LINKS.GITHUB}
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
                 >
                   <Github className="w-5 h-5" />
-                  <span className="text-sm font-medium">v1.1.0</span>
                 </a>
               </div>
             </div>
 
+            {/* Mobile Menu Button */}
             <button 
               className="md:hidden text-gray-400 hover:text-white"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              <Menu className="w-6 h-6" />
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
       </header>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-30 bg-dark-bg/95 backdrop-blur-sm md:hidden pt-20 px-6 animate-fade-in-up">
+           <div className="space-y-6">
+              <div className="flex flex-col gap-4 border-b border-gray-800 pb-6">
+                <a href={EXTERNAL_LINKS.ETSY} className="flex items-center gap-3 text-orange-400 font-semibold text-lg">
+                  <ShoppingBag className="w-5 h-5" /> Etsy Shop
+                </a>
+                <a href={EXTERNAL_LINKS.KOFI} className="flex items-center gap-3 text-pink-400 font-semibold text-lg">
+                  <Coffee className="w-5 h-5" /> Ko-fi Support
+                </a>
+              </div>
+              <div>
+                <h4 className="text-gray-500 text-xs uppercase tracking-wider mb-3">Modules</h4>
+                {/* Simplified module list for mobile menu context could go here, 
+                    but we rely on the sidebar logic mostly. Just showing generic links. */}
+                 <a href={EXTERNAL_LINKS.DOCS} className="block py-2 text-gray-300">Full Documentation</a>
+                 <a href={EXTERNAL_LINKS.GITHUB} className="block py-2 text-gray-300">GitHub Repository</a>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Network Discovery Bar */}
+      <NetworkDiscovery />
 
       {/* Pipeline Visualization */}
       <PipelineVisualizer 
@@ -132,8 +160,9 @@ const App: React.FC = () => {
             ${mobileMenuOpen ? 'block' : 'hidden'} md:block
           `}>
           <div className="sticky top-24">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-              {activePhase} Modules
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rh-red"></span>
+              {activePhase} Phase
             </h3>
             <div className="space-y-2">
               {phaseModules.map(module => (
@@ -160,7 +189,7 @@ const App: React.FC = () => {
               <div className="flex items-start gap-3">
                 <ShieldAlert className="w-5 h-5 text-yellow-500 mt-0.5" />
                 <p className="text-xs text-gray-400 leading-relaxed">
-                  Always verify AI-generated security configurations in a non-production environment before deploying.
+                  Always verify AI-generated security configurations in a non-production environment.
                 </p>
               </div>
             </div>
@@ -169,26 +198,30 @@ const App: React.FC = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 min-w-0">
-          <div className="bg-card-bg rounded-2xl border border-gray-800 overflow-hidden shadow-2xl min-h-[600px] flex flex-col">
+          <div className="bg-card-bg rounded-2xl border border-gray-800 overflow-hidden shadow-2xl min-h-[600px] flex flex-col relative">
             
             {/* Module Header */}
-            <div className="p-8 border-b border-gray-800 bg-gradient-to-r from-gray-900 to-card-bg">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-gray-800 rounded-lg">
-                  <ActiveIcon className="w-6 h-6 text-rh-red" />
-                </div>
-                <span className="text-sm text-rh-red font-semibold tracking-wider uppercase">
-                  {activePhase}
-                </span>
+            <div className="p-8 border-b border-gray-800 bg-gradient-to-r from-gray-900 to-card-bg relative">
+              <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-gray-800 rounded-lg">
+                      <ActiveIcon className="w-6 h-6 text-rh-red" />
+                    </div>
+                    <span className="text-sm text-rh-red font-semibold tracking-wider uppercase">
+                      {activePhase}
+                    </span>
+                  </div>
+                  {/* View Counter */}
+                  {currentModule && <ViewCounter moduleId={currentModule.id} />}
               </div>
               
-              {CURRICULUM.find(m => m.id === activeModuleId) && (
+              {currentModule && (
                 <>
                   <h2 className="text-3xl font-bold text-white mb-2">
-                    {CURRICULUM.find(m => m.id === activeModuleId)?.title}
+                    {currentModule.title}
                   </h2>
                   <p className="text-gray-400 max-w-2xl">
-                    {CURRICULUM.find(m => m.id === activeModuleId)?.shortDesc}
+                    {currentModule.shortDesc}
                   </p>
                 </>
               )}
@@ -201,7 +234,6 @@ const App: React.FC = () => {
                    <div className="h-4 bg-gray-800 rounded w-3/4"></div>
                    <div className="h-4 bg-gray-800 rounded w-1/2"></div>
                    <div className="h-32 bg-gray-800 rounded w-full"></div>
-                   <div className="h-4 bg-gray-800 rounded w-2/3"></div>
                  </div>
               ) : (
                 <MarkdownRenderer content={generatedContent[activeModuleId] || ''} />

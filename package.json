@@ -1,5 +1,5 @@
 {
-  "name": "to-delete-openshift-sdlc-guide",
+  "name": "openshift-sdlc-guide",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "0.1.3",
+    "@supabase/supabase-js": "2.43.4",
     "react": "18.3.1",
     "react-dom": "^19.2.3",
     "lucide-react": "0.378.0"
